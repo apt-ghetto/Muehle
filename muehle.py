@@ -9,7 +9,7 @@ class SpielStrategie(ABC):
         pass
 
     @abstractmethod
-    def takeStein(self, positionen, linien):
+    def takeStein(self, linien, spieler):
         pass
 
 
@@ -20,7 +20,7 @@ class StrategieSimple(SpielStrategie):
             if not punkt.isBesetzt():
                 return punkt
 
-    def takeStein(self, positionen, linien):
+    def takeStein(self, linien, spieler):
         raise NotImplementedError("StrategieSimple: Nicht implementiert")
 
 
@@ -29,7 +29,7 @@ class StrategieMittel(SpielStrategie):
     def getFreiePosition(self, positionen, linien):
         raise NotImplementedError("StrategieMittel: Nicht implementiert")
 
-    def takeStein(self, positionen, linien):
+    def takeStein(self, linien, spieler):
         raise NotImplementedError("StrategieMittel: Nicht implementiert")
 
 
@@ -80,10 +80,9 @@ class Linie:
     def isMuehle(self):
         return self.muehle
 
-    def checkIsMuehle(self, spieler):
-        if (self.pos1.getNummer() == spieler.getWert() and
-            self.pos2.getNummer() == spieler.getWert() and
-                self.pos3.getNummer() == spieler.getWert()):
+    def checkIsMuehle(self):
+        if (self.pos1.getNummer() == self.pos2.getNummer() and
+                self.pos1.getNummer() == self.pos3.getNummer()):
             self.muehle = True
 
         return self.muehle
@@ -91,17 +90,16 @@ class Linie:
 
 class Muehlebrett:
 
-    def __init__(self, strategie):
+    def __init__(self):
         self.positionen = []
-        self.strategie = strategie
         for index in range(0, 24):
             self.positionen.append(Eckpunkt(index))
         self.fuelleLinien()
 
     def checkMuehle(self, spieler):
-        liste = [x for x in self.linien if x.isMuehle() is False]
+        liste = [x for x in self.linien if not x.isMuehle()]
         for linie in liste:
-            if (linie.checkIsMuehle(spieler)):
+            if (linie.checkIsMuehle()):
                 spieler.addPunkt()
 
     def getFreiePosition(self):
@@ -159,6 +157,32 @@ class Muehlebrett:
                                  self.positionen[23]))
 
 
+muehle = Muehlebrett()
+gegner = Spieler(77)
+spieler = Spieler(88)
+
+
+def druckeEndstand():
+    print()
+    print()
+    print("Spiel ist beendet")
+    print()
+    print("Deine Punkte : {}".format(spieler.punktZahl))
+    print("Punkte Gegner: {}".format(gegner.punktZahl))
+    print()
+    if (spieler.punktZahl > gegner.punktZahl):
+        print("Du bist der Gewinner!")
+    elif (spieler.punktZahl < gegner.punktZahl):
+        print("Du hast leider verloren!")
+    else:
+        print("Unentschieden!")
+
+
+def druckeInfos():
+    print("Deine Steine: {}".format(spieler.wert))
+    print("Gegn. Steine: {}".format(gegner.wert))
+
+
 def druckeSpielfeld(positionen):
     print("{:2d}________{:2d}________{:2d}".format(
         positionen[0].getNummer(),
@@ -197,17 +221,39 @@ def druckeSpielfeld(positionen):
         positionen[21].getNummer(),
         positionen[22].getNummer(),
         positionen[23].getNummer()))
+    druckeInfos()
 
 
-muehle = Muehlebrett(StrategieSimple())
-gegner = Spieler(77)
-spieler = Spieler(88)
+def setzeStrategie():
+    while True:
+        print("Mögliche Strategien:")
+        print("1) Simpel")
+        print("2) Mittel")
+        print()
+        try:
+            eingabe = int(input("Deine Wahl: "))
+        except ValueError:
+            print("Das war keine Zahl")
+            continue
+
+        if (1 == eingabe):
+            muehle.strategie = StrategieSimple()
+            break
+        elif (2 == eingabe):
+            muehle.strategie = StrategieMittel()
+            break
+        else:
+            print("Ungültige Eingabe")
+
+
+print("Herzlich willkommen zum Mühlespiel")
+print()
+print()
+setzeStrategie()
 
 while(spieler.hasSteine()):
     os.system('clear')
     druckeSpielfeld(muehle.positionen)
-    print("Deine Steine: 88")
-    print("Gegn. Steine: 77")
     eingabe = 99
     while eingabe > 23:
         try:
@@ -215,7 +261,7 @@ while(spieler.hasSteine()):
         except ValueError:
             print("Ungültige Eingabe")
 
-        if (eingabe < 24 and muehle.positionen[eingabe].isBesetzt() is True):
+        if (eingabe < 24 and muehle.positionen[eingabe].isBesetzt()):
             print("Eckpunkt bereits besetzt!")
             eingabe = 99
     muehle.positionen[eingabe].setBesitzer(spieler)
@@ -228,16 +274,4 @@ while(spieler.hasSteine()):
 
 os.system('clear')
 druckeSpielfeld(muehle.positionen)
-print()
-print()
-print("Spiel ist beendet")
-print()
-print("Deine Punkte : {}".format(spieler.punktZahl))
-print("Punkte Gegner: {}".format(gegner.punktZahl))
-print()
-if (spieler.punktZahl > gegner.punktZahl):
-    print("Du bist der Gewinner!")
-elif (spieler.punktZahl < gegner.punktZahl):
-    print("Du hast leider verloren!")
-else:
-    print("Unentschieden!")
+druckeEndstand()
